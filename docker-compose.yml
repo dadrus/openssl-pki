@@ -67,5 +67,5 @@ services:
       - ./server/private/example2.com.key.pem:/usr/local/apache2/conf/server.key
       - ./issuing_ca/certs/ca_chain.pem:/usr/local/apache2/conf/server-ca.crt
       - ./issuing_ca/certs/ca_chain.pem:/usr/local/apache2/conf/ssl.crt/ca-bundle.crt
-      - ./issuing_ca/crl/crl.pem:/usr/local/apache2/conf/ssl.crl/ca-bundle.crl
+      - ./issuing_ca/crl/combined_crl.pem:/usr/local/apache2/conf/ssl.crl/ca-bundle.crl
 
