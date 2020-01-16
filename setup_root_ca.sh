@@ -20,6 +20,7 @@ mkdir -p \
 # create files required
 touch $CA_DIR/index.txt
 echo 1000 > $CA_DIR/serial
+echo 1000 > $CA_DIR/crlnumber
 
 # generate Root CA key
 openssl genrsa -out $CA_PRIVATE_KEY_FILE 4096
@@ -32,6 +33,8 @@ openssl req -config $CA_CONFIG \
             -out $CA_CERTIFICATE_FILE
             
 chmod 444 $CA_CERTIFICATE_FILE
+
+openssl x509 -in $CA_CERTIFICATE_FILE -out "${CA_CERTIFICATE_FILE/.pem/.der}" -outform der
 
 echo "Generating private key for the OCSP responder"
 openssl genrsa -out $OCSP_PRIVATE_KEY_FILE 2048

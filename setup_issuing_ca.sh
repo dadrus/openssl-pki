@@ -43,7 +43,9 @@ openssl ca -config $ROOT_CA_CONFIG \
            -extensions issuing_ca \
            -days 1825 -notext \
            -in $CA_CSR_FILE \
-           -out $CA_CERTIFICATE_FILE 
+           -out $CA_CERTIFICATE_FILE
+
+openssl x509 -in $CA_CERTIFICATE_FILE -out "${CA_CERTIFICATE_FILE/.pem/.der}" -outform der
             
 chmod 444 $CA_CERTIFICATE_FILE
 
