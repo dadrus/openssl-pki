@@ -66,7 +66,7 @@ openssl req -config $CSR_CONFIG \
             -key $OCSP_PRIVATE_KEY_FILE \
             -out $OCSP_CSR_FILE
 
-echo "Sing the OCSP certificate by the Issuing CA"
+echo "Sign the OCSP certificate by the Issuing CA"
 openssl ca -config $ISSUING_CA_CONF \
            -extensions ocsp \
            -days 365 -notext \
