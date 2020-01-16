@@ -37,14 +37,14 @@ echo "Generating private key for the OCSP responder"
 openssl genrsa -out $OCSP_PRIVATE_KEY_FILE 2048
 chmod 400 $OCSP_PRIVATE_KEY_FILE
 
-echo "Creating CSR to request the OCSP responder certificate from the Issuing CA"
+echo "Creating CSR to request the OCSP responder certificate from the Root CA"
 openssl req -config $CSR_CONFIG \
             -new \
             -key $OCSP_PRIVATE_KEY_FILE \
             -out $OCSP_CSR_FILE
 
-echo "Sing the OCSP certificate by the Issuing CA"
-openssl ca -config $CA_CONF \
+echo "Sing the OCSP certificate by the Root CA"
+openssl ca -config $CA_CONFIG \
            -extensions ocsp \
            -days 365 -notext \
            -in $OCSP_CSR_FILE \
