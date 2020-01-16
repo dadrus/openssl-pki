@@ -2,11 +2,20 @@ version: '3.6'
 
 services:
 
-  ocsp:
+  root-ocsp:
     build: ./ocsp
-    image: dadrus/ocsp-sample:latest
     ports:
       - "2552:2552"
+    volumes:
+      - ./root_ca/index.txt:/opt/ocsp/index.txt
+      - ./root_ca/certs/root_ca_cert.pem:/opt/ocsp/ca-chain.pem
+      - ./root_ca/private/root_ca_ocsp_key.pem:/opt/ocsp/key.pem
+      - ./root_ca/certs/root_ca_ocsp_cert.pem:/opt/ocsp/cert.pem
+
+  ocsp:
+    build: ./ocsp
+    ports:
+      - "2553:2552"
     volumes:
       - ./issuing_ca/index.txt:/opt/ocsp/index.txt
       - ./issuing_ca/certs/ca_chain.pem:/opt/ocsp/ca-chain.pem
@@ -20,7 +29,10 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./nginx/servers/cert-dir.conf:/etc/nginx/my-conf.d/cert-dir.conf
-      - ./issuing_ca/crl/crl.der:/var/www/cert-dir/iss-ca.crl
+      - ./root_ca/certs/root_ca_cert.der:/var/www/cert-dir/root-ca.crt
+      - ./root_ca/crl/crl.der:/var/www/cert-dir/root-ca.crl
+      - ./issuing_ca/certs/issuing_ca_cert.der:/var/www/cert-dir/issuing-ca.crt
+      - ./issuing_ca/crl/crl.der:/var/www/cert-dir/issuing-ca.crl
 
   example1.com:
     image: nginx
