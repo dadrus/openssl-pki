@@ -48,7 +48,7 @@ services:
       - ./server/certs/example1.com.cert.pem:/var/www/certs/example.com.cert.pem
       - ./server/private/example1.com.key.pem:/var/www/certs/example.com.key.pem
       - ./issuing_ca/certs/ca_chain.pem:/var/www/certs/ca-chain.pem
-      - ./issuing_ca/crl/crl.pem:/var/www/certs/crl.pem
+      - ./issuing_ca/crl/combined_crl.pem:/var/www/certs/crl.pem
 
   example2.com:
     image: httpd
