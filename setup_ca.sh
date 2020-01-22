@@ -103,6 +103,7 @@ echo 1000 > $WORKING_DIR/crlnumber
 CSR_CONFIG=./csr.conf
 CA_PRIVATE_KEY_FILE=$WORKING_DIR/private/ca_key.pem
 CA_CERTIFICATE_FILE=$WORKING_DIR/certs/ca_cert.pem
+CA_CSR_FILE=$WORKING_DIR/csr/ca_csr.pem
 OCSP_PRIVATE_KEY_FILE=$WORKING_DIR/private/ocsp_key.pem
 OCSP_CSR_FILE=$WORKING_DIR/csr/ocsp_csr.pem
 OCSP_CERTIFICATE_FILE=$WORKING_DIR/certs/ocsp_cert.pem
@@ -113,12 +114,14 @@ OCSP_DOMAIN_NAME="${BASE_NAME}-ocsp"
 # generate openssl config
 eval "echo \"$(cat "${CONF_TEMPLATE}")\"" > ${WORKING_CONF}
 
-if [ ${CA_TYPE} -ne "root-ca" ]; then
+if [ ${CA_TYPE} != "root-ca" ]; then
   echo "Creating CSR to request the CA certificate from the CA"
-  openssl req -new -config ${WORKING_CONF} \
-              -out $CA_CSR_FILE \
-              -keyout $CA_PRIVATE_KEY_FILE \
-              -nodes
+  openssl req -config ${WORKING_CONF} \
+          -new \
+          -nodes \
+          -subj "/C=DE/ST=NRW/L=Ruhr City/O=No Liability Ltd./CN=${COMMON_NAME}" \
+          -keyout $CA_PRIVATE_KEY_FILE \
+          -out $CA_CSR_FILE
 
   echo "Request certificate"
   openssl ca -config $BASE_CA_CONFIG \
@@ -130,6 +133,8 @@ else
   # create self-signed CA certificate
   openssl req -config $WORKING_CONF \
               -new -x509 -days 3650 -extensions ${EXTENSION_REF} \
+              -nodes \
+              -subj "/C=DE/ST=NRW/L=Ruhr City/O=No Liability Ltd./CN=${COMMON_NAME}" \
               -keyout $CA_PRIVATE_KEY_FILE \
               -out $CA_CERTIFICATE_FILE
 fi
@@ -139,14 +144,15 @@ chmod 444 $CA_CERTIFICATE_FILE
 
 openssl x509 -in $CA_CERTIFICATE_FILE -out "${CA_CERTIFICATE_FILE/.pem/.der}" -outform der
 
-echo "Creating CSR to request the OCSP responder certificate from the Root CA"
+echo "Creating CSR to request the OCSP responder certificate from the CA"
 openssl req -config ${WORKING_CONF} \
             -new \
             -nodes \
+            -subj "/C=DE/ST=NRW/L=Ruhr City/O=No Liability Ltd./CN=${COMMON_NAME} OCSP" \
             -keyout $OCSP_PRIVATE_KEY_FILE \
             -out $OCSP_CSR_FILE
 
-echo "Sing the OCSP certificate by the Root CA"
+echo "Sing the OCSP certificate by the CA"
 openssl ca -config ${WORKING_CONF} \
            -extensions ocsp \
            -days 365 -notext \
