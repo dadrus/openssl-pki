@@ -1,0 +1,104 @@
+[ ca ]
+default_ca = ca_default
+
+[ ca_default ]
+# Location of files required by a CA
+certs            = ${WORKING_DIR}/certs
+crl_dir          = ${WORKING_DIR}/crl
+new_certs_dir    = ${WORKING_DIR}/newcerts
+database         = ${WORKING_DIR}/index.txt
+serial           = ${WORKING_DIR}/serial
+RANDFILE         = ${WORKING_DIR}/private/.rand
+
+# Root key and certificate
+private_key      = ${CA_PRIVATE_KEY_FILE}
+certificate      = ${CA_CERTIFICATE_FILE}
+
+# CRL specific
+crlnumber        = ${WORKING_DIR}/crlnumber
+crl              = ${WORKING_DIR}/crl/ca_crl.pem
+crl_extensions   = crl_ext
+default_crl_days = 30
+
+# Other options
+default_md       = sha256
+name_opt         = ca_default
+cert_opt         = ca_default
+default_days     = 365
+preserve         = no
+
+[ req ]
+# Applied when creating certificate signing requests or certificates
+default_bits       = 2048
+distinguished_name = req_dn
+string_mask        = utf8only
+default_md         = sha256
+
+[ req_dn ]
+# Specifying information required in CSRs with some default
+countryName            = DE
+stateOrProvinceName    = NRW
+localityName           = Ruhr City
+0.organizationName     = No Liability Ltd
+commonName             = ${COMMON_NAME}
+
+[ root-ca ] 
+# To create Root CA certificate
+# Typical CA extensions (\'man x509v3_config\')
+subjectKeyIdentifier   = hash
+authorityKeyIdentifier = keyid:always,issuer
+basicConstraints       = critical, CA:true
+keyUsage               = critical, cRLSign, keyCertSign
+
+[ intermediate-ca ] 
+# To create intermediate CAs
+subjectKeyIdentifier   = hash
+authorityKeyIdentifier = keyid:always,issuer
+basicConstraints       = critical, CA:true, pathlen:0
+keyUsage               = critical, cRLSign, keyCertSign
+crlDistributionPoints  = URI:http://cert-dir/${CRL_FILE_NAME}
+authorityInfoAccess    = OCSP;URI:http://${OCSP_DOMAIN_NAME}:2552, caIssuers;URI:http://cert-dir/${CERTIFICATE_FILE_NAME}
+
+[ issuing-ca ] 
+# To create issuing CAs
+subjectKeyIdentifier   = hash
+authorityKeyIdentifier = keyid:always,issuer
+basicConstraints       = critical, CA:true, pathlen:0
+keyUsage               = critical, cRLSign, keyCertSign
+crlDistributionPoints  = URI:http://cert-dir/${CRL_FILE_NAME}
+authorityInfoAccess    = OCSP;URI:http://${OCSP_DOMAIN_NAME}:2552, caIssuers;URI:http://cert-dir/${CERTIFICATE_FILE_NAME}
+
+[ user-cert ] 
+# To sign client certificates
+basicConstraints       = critical, CA:false
+subjectKeyIdentifier   = hash
+authorityKeyIdentifier = keyid:always,issuer
+keyUsage               = critical, nonRepudiation, digitalSignature, keyEncipherment, keyAgreement
+extendedKeyUsage       = clientAuth, emailProtection
+crlDistributionPoints  = URI:http://cert-dir/${CRL_FILE_NAME}
+authorityInfoAccess    = OCSP;URI:http://${OCSP_DOMAIN_NAME}:2552, caIssuers;URI:http://cert-dir/${CERTIFICATE_FILE_NAME}
+
+[ server-cert ] 
+# To sign server certificates
+basicConstraints       = critical, CA:false
+subjectKeyIdentifier   = hash
+authorityKeyIdentifier = keyid:always,issuer
+keyUsage               = critical, digitalSignature, keyEncipherment, keyAgreement
+extendedKeyUsage       = serverAuth
+crlDistributionPoints  = URI:http://cert-dir/${CRL_FILE_NAME}
+authorityInfoAccess    = OCSP;URI:http://${OCSP_DOMAIN_NAME}:2552, caIssuers;URI:http://cert-dir/${CERTIFICATE_FILE_NAME}
+
+[ crl_ext ]
+# Extensions for CRLs
+authorityKeyIdentifier = keyid:always
+
+[ ocsp ]
+# Extensions for OCSP certificates
+basicConstraints       = critical, CA:false
+subjectKeyIdentifier   = hash
+authorityKeyIdentifier = keyid:always,issuer
+keyUsage               = critical, digitalSignature
+extendedKeyUsage       = OCSPSigning
+authorityInfoAccess    = caIssuers;URI:http://cert-dir/${CRL_FILE_NAME}
+noCheck                = ignored
+
