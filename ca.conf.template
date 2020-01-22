@@ -26,13 +26,25 @@ name_opt         = ca_default
 cert_opt         = ca_default
 default_days     = 365
 preserve         = no
+policy           = policy_any
+
+[ policy_any ]
+countryName            = supplied
+stateOrProvinceName    = optional
+organizationName       = optional
+organizationalUnitName = optional
+commonName             = supplied
+emailAddress           = optional
+
 
 [ req ]
 # Applied when creating certificate signing requests or certificates
 default_bits       = 2048
 distinguished_name = req_dn
 string_mask        = utf8only
+utf8               = yes         # Input is UTF-8
 default_md         = sha256
+prompt             = no          # Don't prompt for DN
 
 [ req_dn ]
 # Specifying information required in CSRs with some default
@@ -40,7 +52,6 @@ countryName            = DE
 stateOrProvinceName    = NRW
 localityName           = Ruhr City
 0.organizationName     = No Liability Ltd
-commonName             = ${COMMON_NAME}
 
 [ root-ca ] 
 # To create Root CA certificate
@@ -68,6 +79,16 @@ keyUsage               = critical, cRLSign, keyCertSign
 crlDistributionPoints  = URI:http://cert-dir/${CRL_FILE_NAME}
 authorityInfoAccess    = OCSP;URI:http://${OCSP_DOMAIN_NAME}:2552, caIssuers;URI:http://cert-dir/${CERTIFICATE_FILE_NAME}
 
+[ ocsp ]
+# Extensions for OCSP certificates
+basicConstraints       = critical, CA:false
+subjectKeyIdentifier   = hash
+authorityKeyIdentifier = keyid:always,issuer
+keyUsage               = critical, digitalSignature
+extendedKeyUsage       = OCSPSigning
+authorityInfoAccess    = caIssuers;URI:http://cert-dir/${CERTIFICATE_FILE_NAME}
+noCheck                = ignored
+
 [ user-cert ] 
 # To sign client certificates
 basicConstraints       = critical, CA:false
@@ -92,13 +113,4 @@ authorityInfoAccess    = OCSP;URI:http://${OCSP_DOMAIN_NAME}:2552, caIssuers;URI
 # Extensions for CRLs
 authorityKeyIdentifier = keyid:always
 
-[ ocsp ]
-# Extensions for OCSP certificates
-basicConstraints       = critical, CA:false
-subjectKeyIdentifier   = hash
-authorityKeyIdentifier = keyid:always,issuer
-keyUsage               = critical, digitalSignature
-extendedKeyUsage       = OCSPSigning
-authorityInfoAccess    = caIssuers;URI:http://cert-dir/${CRL_FILE_NAME}
-noCheck                = ignored
 
