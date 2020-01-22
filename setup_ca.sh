@@ -42,6 +42,7 @@ while [ $# -gt 0 ]; do
       ;;
     --working_dir)
       WORKING_DIR="${2:?ERROR: '--working_dir' requires a non-empty option argument}"
+      WORKING_DIR=$(realpath ${WORKING_DIR})
       shift
       ;;
     --issuer_dir)
@@ -161,3 +162,30 @@ openssl ca -config ${WORKING_CONF} \
 
 chmod 400 $OCSP_PRIVATE_KEY_FILE
 chmod 444 $OCSP_CERTIFICATE_FILE
+
+# generate some helper scripts
+
+# generate CRL generator script
+GENERATE_CRL_SCRIPT_FILE=$WORKING_DIR/generate_crl.sh
+cat > "${GENERATE_CRL_SCRIPT_FILE}" <<EOF
+#!/bin/bash
+
+# generate CRL
+openssl ca -config ${WORKING_DIR}/ca.conf -gencrl -out ${WORKING_DIR}/crl/crl.pem
+
+# convert to DER representation
+openssl crl -in ${WORKING_DIR}/crl/crl.pem -out ${WORKING_DIR}/crl/crl.der -outform der
+EOF
+
+chmod +x ${GENERATE_CRL_SCRIPT_FILE}
+
+# generate cert revokation skript
+REVOKE_CERT_SCRIPT_FILE=$WORKING_DIR/revoke_certificate.sh
+cat > "${REVOKE_CERT_SCRIPT_FILE}" <<EOF
+#!/bin/bash
+
+openssl ca -config ${WORKING_DIR}/ca.conf -revoke \$1
+EOF
+
+chmod +x ${REVOKE_CERT_SCRIPT_FILE}
+
