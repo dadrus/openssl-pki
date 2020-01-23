@@ -114,6 +114,7 @@ OCSP_CERTIFICATE_FILE=$WORKING_DIR/certs/ocsp_cert.pem
 CRL_FILE_NAME="${BASE_NAME}.crl"
 CERTIFICATE_FILE_NAME="${BASE_NAME}.crt"
 OCSP_DOMAIN_NAME="${BASE_NAME}-ocsp"
+DOCKER_CONFIG_FILE=${WORKING_DIR}/docker.config
 
 # generate openssl config
 eval "echo \"$(cat "${CONF_TEMPLATE}")\"" > ${WORKING_CONF}
@@ -189,6 +190,19 @@ function generate() {
     echo "$line" >> ${OUT_FILE}
   done
 }
+
+# create docker.config file containing the relevant entries to generate a docker-compose file
+cat > "${DOCKER_CONFIG_FILE}" <<EOF
+OCSP_CERTIFICATE_FILE=${OCSP_CERTIFICATE_FILE}
+OCSP_PRIVATE_KEY_FILE=${OCSP_PRIVATE_KEY_FILE}
+CA_INDEX_FILE=${WORKING_DIR}/index.txt
+CA_CHAIN_FILE=${WORKING_DIR}/certs/ca_chain.pem
+CA_CERTIFICATE_FILE=${CA_CERTIFICATE_FILE/.pem/.der}
+SRV_CERTIFICATE_FILE_NAME=${CERTIFICATE_FILE_NAME}
+CRL_FILE=${WORKING_DIR}/crl/crl.pem
+SRV_CRL_FILE_NAME=${CRL_FILE_NAME}
+OCSP_DOMAIN_NAME=${OCSP_DOMAIN_NAME}
+EOF
 
 # generate CRL generator script
 generate ${TEMPLATES_DIR}/generate_crl.sh.template ${WORKING_DIR}/generate_crl.sh
