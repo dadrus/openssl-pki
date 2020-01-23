@@ -47,6 +47,7 @@ while [ $# -gt 0 ]; do
       ;;
     -p | --parent_dir)
       ISSUER_DIR="${2:?ERROR: '--parent_dir' requires a non-empty option argument}"
+      ISSUER_DIR=$(realpath ${ISSUER_DIR})
       shift
       ;;
     -v | --verbose)
@@ -64,8 +65,10 @@ done
 [ "${CA_TYPE}" ]     || abort "ERROR:" "Usage of --ca_type argument is mandatory"
 [ "${WORKING_DIR}" ] || abort "ERROR:" "Usage of --working_dir argument is mandatory"
 
+SCRIPT_PATH=$(dirname $(realpath -s $0))
+
 BASE_NAME=$(tolower "$(echo "${COMMON_NAME}" | sed -r 's/[ _()]+/-/g')")
-TEMPLATES_DIR=./templates
+TEMPLATES_DIR=${SCRIPT_PATH}/templates
 CONF_TEMPLATE=${TEMPLATES_DIR}/ca.conf.template
 WORKING_CONF=${WORKING_DIR}/ca.conf
 EXTENSION_REF=""
@@ -102,7 +105,6 @@ touch $WORKING_DIR/index.txt
 echo 1000 > $WORKING_DIR/serial
 echo 1000 > $WORKING_DIR/crlnumber
 
-CSR_CONFIG=./csr.conf
 CA_PRIVATE_KEY_FILE=$WORKING_DIR/private/ca_key.pem
 CA_CERTIFICATE_FILE=$WORKING_DIR/certs/ca_cert.pem
 CA_CSR_FILE=$WORKING_DIR/csr/ca_csr.pem

@@ -53,6 +53,7 @@ while [ $# -gt 0 ]; do
       ;;
     -ca | --ca_dir)
       CA_DIR="${2:?ERROR: '--ca_dir' requires a non-empty option argument}"
+      CA_DIR=$(realpath ${CA_DIR})
       shift
       ;;
     -o | --out_dir)
