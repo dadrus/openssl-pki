@@ -77,6 +77,7 @@ done
 [ "${CERTIFICATE_TYPE}" ] || abort "ERROR:" "Usage of --type argument is mandatory"
 
 mkdir -p "${OUT_DIR}"
+OUT_DIR=$(realpath ${OUT_DIR})
 CONFIG_FILE_NAME="$(echo "${COMMON_NAME}" | sed -r 's/[ _()]+/-/g' | sed -r 's/[*]+/star/g')-$(date +%Y-%m-%d-%H%M%S)"
 
 EXTENSION_REF=""
@@ -86,6 +87,7 @@ CSR_FILE=${OUT_DIR}/csr.pem
 CERTIFICATE_FILE=${OUT_DIR}/cert.pem
 CONFIG_FILE="/tmp/${CONFIG_FILE_NAME}.conf"
 CA_CHAIN_FILE=${CA_DIR}/certs/ca_chain.pem
+DOCKER_CONFIG_FILE=${OUT_DIR}/docker.config
 
 [ -s "${CA_CONFIG}" ]     || abort "ERROR:" "Referenced CA directory does not contain the required configuration"
 [ -s "${CA_CHAIN_FILE}" ] || abort "ERROR:" "Referenced CA directory does not contain the required configuration"
@@ -148,5 +150,14 @@ chmod 444 ${CERTIFICATE_FILE}
 
 cp $CA_CHAIN_FILE ${OUT_DIR}/
 openssl verify -CAfile ${CA_CHAIN_FILE} ${CERTIFICATE_FILE}
+
+# create docker.config file containing the relevant entries to generate a docker-compose file
+cat > "${DOCKER_CONFIG_FILE}" <<EOF
+SERVER_DOMAIN=${COMMON_NAME}
+SRV_CERTIFICATE_FILE=${CERTIFICATE_FILE}
+SRV_PRIVATE_KEY_FILE=${PRIVATE_KEY_FILE}
+CA_CHAIN_FILE=${CA_CHAIN_FILE}
+CRL_FILE=""
+EOF
 
 
