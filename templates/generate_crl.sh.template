@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# generate CRL
+openssl ca -config ${WORKING_DIR}/ca.conf -gencrl -out ${WORKING_DIR}/crl/crl.pem
+
+# convert to DER representation
+openssl crl -in ${WORKING_DIR}/crl/crl.pem -out ${WORKING_DIR}/crl/crl.der -outform der

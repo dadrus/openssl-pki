@@ -26,6 +26,7 @@ name_opt         = ca_default
 cert_opt         = ca_default
 default_days     = 365
 preserve         = no
+unique_subject   = no
 policy           = policy_any
 
 [ policy_any ]

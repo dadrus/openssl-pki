@@ -31,25 +31,25 @@ while [ $# -gt 0 ]; do
       usage
       exit 0
       ;;
-    --common_name)
+    -cn | --common_name)
       COMMON_NAME="${2:?ERROR: '--common_name' requires a non-empty option argument}"
       shift
       ;;
-    --ca_type)
-      CA_TYPE="${2:?ERROR: '--ca_type' requires a non-empty option argument}"
+    -t | --type)
+      CA_TYPE="${2:?ERROR: '--type' requires a non-empty option argument}"
       CA_TYPE=$(tolower "${CA_TYPE}")
       shift
       ;;
-    --working_dir)
-      WORKING_DIR="${2:?ERROR: '--working_dir' requires a non-empty option argument}"
+    -o | --out_dir)
+      WORKING_DIR="${2:?ERROR: '--out_dir' requires a non-empty option argument}"
       WORKING_DIR=$(realpath ${WORKING_DIR})
       shift
       ;;
-    --issuer_dir)
-      ISSUER_DIR="${2:?ERROR: '--issuer_dir' requires a non-empty option argument}"
+    -p | --parent_dir)
+      ISSUER_DIR="${2:?ERROR: '--parent_dir' requires a non-empty option argument}"
       shift
       ;;
-    --verbose)
+    -v | --verbose)
       VERBOSE=true
       ;;
     *)
@@ -65,7 +65,8 @@ done
 [ "${WORKING_DIR}" ] || abort "ERROR:" "Usage of --working_dir argument is mandatory"
 
 BASE_NAME=$(tolower "$(echo "${COMMON_NAME}" | sed -r 's/[ _()]+/-/g')")
-CONF_TEMPLATE=./ca.conf.template
+TEMPLATES_DIR=./templates
+CONF_TEMPLATE=${TEMPLATES_DIR}/ca.conf.template
 WORKING_CONF=${WORKING_DIR}/ca.conf
 EXTENSION_REF=""
 BASE_CA_CONFIG=""
@@ -130,6 +131,10 @@ if [ ${CA_TYPE} != "root-ca" ]; then
              -days 1825 -notext \
              -in $CA_CSR_FILE \
              -out $CA_CERTIFICATE_FILE
+  
+  cat ${ISSUER_DIR}/certs/ca_cert.pem > $WORKING_DIR/certs/ca_chain.pem
+  cat $CA_CERTIFICATE_FILE >> $WORKING_DIR/certs/ca_chain.pem
+
 else
   # create self-signed CA certificate
   openssl req -config $WORKING_CONF \
@@ -138,6 +143,8 @@ else
               -subj "/C=DE/ST=NRW/L=Ruhr City/O=No Liability Ltd./CN=${COMMON_NAME}" \
               -keyout $CA_PRIVATE_KEY_FILE \
               -out $CA_CERTIFICATE_FILE
+
+  cat $CA_CERTIFICATE_FILE >> $WORKING_DIR/certs/ca_chain.pem
 fi
 
 chmod 400 $CA_PRIVATE_KEY_FILE      
@@ -165,27 +172,28 @@ chmod 444 $OCSP_CERTIFICATE_FILE
 
 # generate some helper scripts
 
+function generate() {
+  IN_TEMPLATE=$1
+  OUT_FILE=$2
+
+  truncate -s 0 ${OUT_FILE}
+
+  regex='\$\{([a-zA-Z_][a-zA-Z_0-9]*)\}'
+  cat ${IN_TEMPLATE} | while read line; do
+    while [[ "$line" =~ $regex ]]; do
+        param="${BASH_REMATCH[1]}"
+        line=${line//${BASH_REMATCH[0]}/${!param}}
+    done
+    echo "$line" >> ${OUT_FILE}
+  done
+}
+
 # generate CRL generator script
-GENERATE_CRL_SCRIPT_FILE=$WORKING_DIR/generate_crl.sh
-cat > "${GENERATE_CRL_SCRIPT_FILE}" <<EOF
-#!/bin/bash
-
-# generate CRL
-openssl ca -config ${WORKING_DIR}/ca.conf -gencrl -out ${WORKING_DIR}/crl/crl.pem
-
-# convert to DER representation
-openssl crl -in ${WORKING_DIR}/crl/crl.pem -out ${WORKING_DIR}/crl/crl.der -outform der
-EOF
-
-chmod +x ${GENERATE_CRL_SCRIPT_FILE}
+generate ${TEMPLATES_DIR}/generate_crl.sh.template ${WORKING_DIR}/generate_crl.sh
+chmod +x ${WORKING_DIR}/generate_crl.sh
 
 # generate cert revokation skript
-REVOKE_CERT_SCRIPT_FILE=$WORKING_DIR/revoke_certificate.sh
-cat > "${REVOKE_CERT_SCRIPT_FILE}" <<EOF
-#!/bin/bash
+generate ${TEMPLATES_DIR}/revoke_certificate.sh.template ${WORKING_DIR}/revoke_certificate.sh
+chmod +x ${WORKING_DIR}/revoke_certificate.sh
 
-openssl ca -config ${WORKING_DIR}/ca.conf -revoke \$1
-EOF
-
-chmod +x ${REVOKE_CERT_SCRIPT_FILE}
 
