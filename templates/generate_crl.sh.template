@@ -5,3 +5,5 @@ openssl ca -config ${WORKING_DIR}/ca.conf -gencrl -out ${WORKING_DIR}/crl/crl.pe
 
 # convert to DER representation
 openssl crl -in ${WORKING_DIR}/crl/crl.pem -out ${WORKING_DIR}/crl/crl.der -outform der
+
+cat ${WORKING_DIR}/crl/crl.pem > ${WORKING_DIR}/crl/crl.bundle
