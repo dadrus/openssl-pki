@@ -100,7 +100,7 @@ done
 # create certificate directory entry
 cat >> "${DOCKER_COMPOSE_FILE}" <<EOF
   cert-dir:
-    build: nginx
+    image: nginx
     ports:
       - "8080:80"
     volumes:
@@ -150,8 +150,9 @@ EOF
       - ${ref}
 EOF
   done
-
-  cat >> "${DOCKER_COMPOSE_FILE}" <<EOF
+  
+  if [ "${SRV_TYPE}" == "nginx" ]; then
+    cat >> "${DOCKER_COMPOSE_FILE}" <<EOF
     volumes:
       - ${SCRIPT_PATH}/nginx/nginx.conf:/etc/nginx/nginx.conf
       - ${SCRIPT_PATH}/nginx/servers/example.com.conf:/etc/nginx/my-conf.d/example.com.conf
@@ -161,6 +162,22 @@ EOF
       - ${CA_CHAIN_FILE}:/var/www/certs/ca-chain.pem
       - ${CRL_FILE}:/var/www/certs/crl.pem
 EOF
+  elif [ "${SRV_TYPE}" == "httpd" ]; then
+    cat >> "${DOCKER_COMPOSE_FILE}" <<EOF
+    volumes:
+      - ${SCRIPT_PATH}/httpd/web/index.html:/usr/local/apache2/htdocs/index.html
+      - ${SCRIPT_PATH}/httpd/httpd.conf:/usr/local/apache2/conf/httpd.conf
+      - ${SCRIPT_PATH}/httpd/httpd-ssl.conf:/usr/local/apache2/conf/extra/httpd-ssl.conf
+      - ${SRV_CERTIFICATE_FILE}:/usr/local/apache2/conf/server.crt
+      - ${SRV_PRIVATE_KEY_FILE}:/usr/local/apache2/conf/server.key
+      - ${CA_CHAIN_FILE}:/usr/local/apache2/conf/server-ca.crt
+      - ${CA_CHAIN_FILE}:/usr/local/apache2/conf/ssl.crt/ca-bundle.crt
+      - ${CRL_FILE}:/usr/local/apache2/conf/ssl.crl/ca-bundle.crl
+EOF
+  else
+    abort "ERROR:" "Unsupported server type $SRV_TYPE"
+  fi
+  let CONTAINER_PORT+=1
 done
 
 
