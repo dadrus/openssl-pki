@@ -206,7 +206,20 @@ EOF
 
 # generate CRL generator script
 generate ${TEMPLATES_DIR}/generate_crl.sh.template ${WORKING_DIR}/generate_crl.sh
+
+if [ "${ISSUER_DIR}" ]; then
+  cat >> ${WORKING_DIR}/generate_crl.sh <<EOF
+
+# create a crl bundle by merging the crl bundle of the parent ca with the own crl
+if [ -s ${ISSUER_DIR}/crl/crl.bundle ]; then
+  cat ${ISSUER_DIR}/crl/crl.bundle >> ${WORKING_DIR}/crl/crl.bundle
+fi
+EOF
+fi
+
 chmod +x ${WORKING_DIR}/generate_crl.sh
+
+${WORKING_DIR}/generate_crl.sh
 
 # generate cert revokation skript
 generate ${TEMPLATES_DIR}/revoke_certificate.sh.template ${WORKING_DIR}/revoke_certificate.sh
