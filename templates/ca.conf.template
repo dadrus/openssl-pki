@@ -66,7 +66,7 @@ keyUsage               = critical, cRLSign, keyCertSign
 # To create intermediate CAs
 subjectKeyIdentifier   = hash
 authorityKeyIdentifier = keyid:always,issuer
-basicConstraints       = critical, CA:true, pathlen:0
+basicConstraints       = critical, CA:true
 keyUsage               = critical, cRLSign, keyCertSign
 crlDistributionPoints  = URI:http://cert-dir/${CRL_FILE_NAME}
 authorityInfoAccess    = OCSP;URI:http://${OCSP_DOMAIN_NAME}:2552, caIssuers;URI:http://cert-dir/${CERTIFICATE_FILE_NAME}
