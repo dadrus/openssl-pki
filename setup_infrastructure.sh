@@ -87,7 +87,7 @@ for ca_dir in "${CA_REFERENCES[@]}"; do
       - "${CONTAINER_PORT}:2552"
     volumes:
       - ${CA_INDEX_FILE}:/opt/ocsp/index.txt
-      - ${CA_CHAIN_FILE}:/opt/ocsp/ca-chain.pem
+      - ${CA_CERTIFICATE_FILE_PEM}:/opt/ocsp/ca_cert.pem
       - ${OCSP_PRIVATE_KEY_FILE}:/opt/ocsp/key.pem
       - ${OCSP_CERTIFICATE_FILE}:/opt/ocsp/cert.pem
 

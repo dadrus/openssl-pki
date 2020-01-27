@@ -78,6 +78,9 @@ BASE_CA_CONFIG=""
 case "${CA_TYPE}" in
   root-ca)
     EXTENSION_REF="root-ca"
+    if [ -d "${ISSUER_DIR}" ]; then
+      BASE_CA_CONFIG=${ISSUER_DIR}/ca.conf
+    fi
     ;;
   intermediate-ca)
     EXTENSION_REF="intermediate-ca"
@@ -107,6 +110,7 @@ echo 1000 > $WORKING_DIR/crlnumber
 
 CA_PRIVATE_KEY_FILE=$WORKING_DIR/private/ca_key.pem
 CA_CERTIFICATE_FILE=$WORKING_DIR/certs/ca_cert.pem
+CA_CROSS_CERTIFICATE_FILE=$WORKING_DIR/certs/ca_cross_cert.pem
 CA_CSR_FILE=$WORKING_DIR/csr/ca_csr.pem
 OCSP_PRIVATE_KEY_FILE=$WORKING_DIR/private/ocsp_key.pem
 OCSP_CSR_FILE=$WORKING_DIR/csr/ocsp_csr.pem
@@ -135,11 +139,12 @@ if [ ${CA_TYPE} != "root-ca" ]; then
              -in $CA_CSR_FILE \
              -out $CA_CERTIFICATE_FILE
   
-  cat ${ISSUER_DIR}/certs/ca_cert.pem > $WORKING_DIR/certs/ca_chain.pem
+  cat ${ISSUER_DIR}/certs/ca_chain.pem > $WORKING_DIR/certs/ca_chain.pem
   cat $CA_CERTIFICATE_FILE >> $WORKING_DIR/certs/ca_chain.pem
 
 else
   # create self-signed CA certificate
+  echo "Generating self-signed certificate"
   openssl req -config $WORKING_CONF \
               -new -x509 -days 3650 -extensions ${EXTENSION_REF} \
               -nodes \
@@ -147,7 +152,28 @@ else
               -keyout $CA_PRIVATE_KEY_FILE \
               -out $CA_CERTIFICATE_FILE
 
-  cat $CA_CERTIFICATE_FILE >> $WORKING_DIR/certs/ca_chain.pem
+  cat $CA_CERTIFICATE_FILE > $WORKING_DIR/certs/ca_chain.pem
+
+  # if ISSUER_DIR is supplied create a cross certificate
+  if [ -d "${ISSUER_DIR}" ]; then
+    echo "Creating cross-certificate"
+    # create CSR from self-signed cert
+    openssl x509 -x509toreq -in $CA_CERTIFICATE_FILE \
+                 -signkey $CA_PRIVATE_KEY_FILE \
+                 -out $CA_CSR_FILE
+
+    # request cert from referenced CA
+    echo "Request certificate"
+    openssl ca -config $BASE_CA_CONFIG \
+               -extensions intermediate-ca \
+               -days 3650 -notext \
+               -in $CA_CSR_FILE \
+               -out $CA_CROSS_CERTIFICATE_FILE
+
+    echo "Updating CA chain"
+    cat $CA_CROSS_CERTIFICATE_FILE >> $WORKING_DIR/certs/ca_chain.pem
+    cat ${ISSUER_DIR}/certs/ca_cert.pem >> $WORKING_DIR/certs/ca_chain.pem
+  fi
 fi
 
 chmod 400 $CA_PRIVATE_KEY_FILE      
@@ -198,6 +224,7 @@ OCSP_PRIVATE_KEY_FILE=${OCSP_PRIVATE_KEY_FILE}
 CA_INDEX_FILE=${WORKING_DIR}/index.txt
 CA_CHAIN_FILE=${WORKING_DIR}/certs/ca_chain.pem
 CA_CERTIFICATE_FILE=${CA_CERTIFICATE_FILE/.pem/.der}
+CA_CERTIFICATE_FILE_PEM=${CA_CERTIFICATE_FILE}
 SRV_CERTIFICATE_FILE_NAME=${CERTIFICATE_FILE_NAME}
 CRL_FILE=${WORKING_DIR}/crl/crl.pem
 SRV_CRL_FILE_NAME=${CRL_FILE_NAME}
