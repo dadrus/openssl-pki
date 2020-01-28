@@ -152,12 +152,18 @@ EOF
   done
   
   if [ "${SRV_TYPE}" == "nginx" ]; then
+    # there is no way to specify a separate file containing the certificate chain
+    # for the given ee certificate. Therefore we create a new file with all relevant entries
+    TMP_CERT_FILE_WITH_CHAIN="/tmp/srv-nginx-cert-$(date +%Y-%m-%d-%H%M%S).pem"
+    cat ${SRV_CERTIFICATE_FILE} > ${TMP_CERT_FILE_WITH_CHAIN}
+    cat ${CA_CHAIN_FILE} >> ${TMP_CERT_FILE_WITH_CHAIN}
+
     cat >> "${DOCKER_COMPOSE_FILE}" <<EOF
     volumes:
       - ${SCRIPT_PATH}/nginx/nginx.conf:/etc/nginx/nginx.conf
       - ${SCRIPT_PATH}/nginx/servers/example.com.conf:/etc/nginx/my-conf.d/example.com.conf
       - ${SCRIPT_PATH}/nginx/web/index.html:/var/www/example.com/index.html
-      - ${SRV_CERTIFICATE_FILE}:/var/www/certs/srv_cert.pem
+      - ${TMP_CERT_FILE_WITH_CHAIN}:/var/www/certs/srv_cert.pem
       - ${SRV_PRIVATE_KEY_FILE}:/var/www/certs/srv_key.pem
       - ${CA_CHAIN_FILE}:/var/www/certs/ca-chain.pem
       - ${CRL_FILE}:/var/www/certs/crl.pem
