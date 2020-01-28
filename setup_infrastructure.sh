@@ -157,8 +157,8 @@ EOF
       - ${SCRIPT_PATH}/nginx/nginx.conf:/etc/nginx/nginx.conf
       - ${SCRIPT_PATH}/nginx/servers/example.com.conf:/etc/nginx/my-conf.d/example.com.conf
       - ${SCRIPT_PATH}/nginx/web/index.html:/var/www/example.com/index.html
-      - ${SRV_CERTIFICATE_FILE}:/var/www/certs/example.com.cert.pem
-      - ${SRV_PRIVATE_KEY_FILE}:/var/www/certs/example.com.key.pem
+      - ${SRV_CERTIFICATE_FILE}:/var/www/certs/srv_cert.pem
+      - ${SRV_PRIVATE_KEY_FILE}:/var/www/certs/srv_key.pem
       - ${CA_CHAIN_FILE}:/var/www/certs/ca-chain.pem
       - ${CRL_FILE}:/var/www/certs/crl.pem
 EOF
