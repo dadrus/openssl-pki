@@ -119,6 +119,8 @@ CRL_FILE_NAME="${BASE_NAME}.crl"
 CERTIFICATE_FILE_NAME="${BASE_NAME}.crt"
 OCSP_DOMAIN_NAME="${BASE_NAME}-ocsp"
 DOCKER_CONFIG_FILE=${WORKING_DIR}/docker.config
+CA_CERT_STORE=$WORKING_DIR/certs/ca_chain.p12
+CA_CERT_STORE_PASS="changeit"
 
 # generate openssl config
 eval "echo \"$(cat "${CONF_TEMPLATE}")\"" > ${WORKING_CONF}
@@ -175,6 +177,18 @@ else
     cat ${ISSUER_DIR}/certs/ca_cert.pem >> $WORKING_DIR/certs/ca_chain.pem
   fi
 fi
+
+# create a pkcs#12 file with certificates from the chain file
+# it would be great if we just could use openssl pkcs12, but it is unfortunatelly not compatible with Java KeyTool, which will be used
+# by java client and server
+cat $WORKING_DIR/certs/ca_chain.pem | awk 'split_after==1{n++;split_after=0} /-----END CERTIFICATE-----/ {split_after=1} {if(length($0) > 0) print > "tmp_cert" n ".pem"}'
+
+counter=0
+for file in $(ls tmp_cert*); do
+  keytool -importcert -noprompt -alias "cert-$counter" -file $file -keystore ${CA_CERT_STORE} -storepass ${CA_CERT_STORE_PASS}
+  rm $file
+  let counter+=1
+done
 
 chmod 400 $CA_PRIVATE_KEY_FILE      
 chmod 444 $CA_CERTIFICATE_FILE
