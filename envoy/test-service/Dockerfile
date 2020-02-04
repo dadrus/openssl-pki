@@ -1,10 +1,13 @@
 FROM alpine:3.9
 
-RUN apk update && apk add python3 bash curl
-RUN pip3 install -q Flask
-RUN mkdir /code
-ADD ./test-service.py /code
-ADD ./app /code
-ADD ./start_service.sh /usr/local/bin/start_service.sh
-RUN chmod u+x /usr/local/bin/start_service.sh
-ENTRYPOINT /usr/local/bin/start_service.sh
+LABEL maintainer="dimitrij.drus@innoq.com"
+
+RUN apk update && apk add python3 bash curl && \
+    pip3 install -q Flask
+
+WORKDIR /service
+
+COPY test-service.py /service
+
+ENTRYPOINT [ "python3" ]
+CMD [ "test-service.py" ]
