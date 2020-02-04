@@ -180,6 +180,23 @@ EOF
       - ${CA_CHAIN_FILE}:/usr/local/apache2/conf/ssl.crt/ca-bundle.crt
       - ${CRL_FILE}:/usr/local/apache2/conf/ssl.crl/ca-bundle.crl
 EOF
+  elif [ "${SRV_TYPE}" == "envoyproxy/envoy" ]; then
+      cat >> "${DOCKER_COMPOSE_FILE}" <<EOF
+    volumes:
+      - ${SCRIPT_PATH}/envoy/envoy.yaml:/etc/envoy/envoy.yaml
+      - ${SRV_CERTIFICATE_FILE}:/etc/envoy/test_server.crt
+      - ${SRV_PRIVATE_KEY_FILE}:/etc/envoy/test_server.key
+      - ${CA_CHAIN_FILE}:/etc/envoy/test_server-ca.crt
+      - ${CA_CHAIN_FILE}:/etc/envoy/test_ca-bundle.crt
+      - ${CRL_FILE}:/etc/envoy/test_ca-bundle.crl
+
+  test-service:
+    build:
+      context: ${SCRIPT_PATH}/envoy
+      dockerfile: Dockerfile.service
+    expose:
+      - "9090"
+EOF
   else
     abort "ERROR:" "Unsupported server type $SRV_TYPE"
   fi
