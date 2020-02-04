@@ -1,0 +1,20 @@
+version: "3.7"
+
+services:
+  front-envoy:
+    image: envoyproxy/envoy:v1.13.0
+    volumes:
+      - ./front-envoy.yaml:/etc/envoy/envoy.yaml
+    expose:
+      - "8081"
+      - "8001"
+    ports:
+      - "8081:8081"
+      - "8001:8001"
+
+  test-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+    expose:
+      - "8080"
