@@ -12,7 +12,7 @@ static_resources:
     - filters:
       - name: envoy.http_connection_manager
         typed_config:
-          "@type": type.googleapis.com/envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManager
+          "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
           stat_prefix: ingress_http
           route_config:
             name: local_route
@@ -25,15 +25,20 @@ static_resources:
           http_filters:
           - name: envoy.router
             typed_config: {}
-      tls_context:
-        common_tls_context:
-          tls_params:
-            tls_minimum_protocol_version: "TLSv1_2"
-          tls_certificates:
-            - certificate_chain:
-                filename: "/etc/envoy/server.crt"
-              private_key:
-                filename: "/etc/envoy/server.key"
+      transport_socket:
+        name: envoy.transport_sockets.tls
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext
+          common_tls_context:
+            tls_params:
+              tls_minimum_protocol_version: "TLSv1_2"
+            tls_certificates:
+              - certificate_chain: { filename: /etc/envoy/server.crt }
+                private_key: { filename: /etc/envoy/server.key }
+            validation_context:
+              trusted_ca: { filename: /etc/envoy/ca_bundle.crt }
+              crl: { filename: /etc/envoy/ca_bundle.crl }
+
   clusters:
   - name: flask_service
     connect_timeout: 0.25s
