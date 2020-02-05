@@ -121,6 +121,19 @@ done
 
 CONTAINER_REFERENCES+=("cert-dir")
 
+# create entry for the backend service
+cat >> "${DOCKER_COMPOSE_FILE}" <<EOF
+
+  test-service:
+    build:
+      context: ${SCRIPT_PATH}/envoy
+      dockerfile: Dockerfile.service
+    expose:
+      - "9090"
+EOF
+
+CONTAINER_REFERENCES+=("test-service")
+
 # create server entries based on given type
 CONTAINER_PORT=8443
 for srv in "${SERVERS[@]}"; do
@@ -189,18 +202,24 @@ EOF
       - ${SRV_PRIVATE_KEY_FILE}:/etc/envoy/server.key
       - ${CA_CHAIN_FILE}:/etc/envoy/ca_bundle.crt
       - ${CRL_FILE}:/etc/envoy/ca_bundle.crl
+EOF
+  elif [ "${SRV_TYPE}" == "haproxy" ]; then
+    TMP_CERT_FILE_WITH_CHAIN_AND_KEY="/tmp/srv-cert-with-chain-and-key-$(date +%Y-%m-%d-%H%M%S%N).pem"
+    cat ${TMP_CERT_FILE_WITH_CHAIN} > ${TMP_CERT_FILE_WITH_CHAIN_AND_KEY}
+    cat ${SRV_PRIVATE_KEY_FILE} >> ${TMP_CERT_FILE_WITH_CHAIN_AND_KEY}
 
-  test-service:
-    build:
-      context: ${SCRIPT_PATH}/envoy
-      dockerfile: Dockerfile.service
-    expose:
-      - "9090"
+    cat >> "${DOCKER_COMPOSE_FILE}" <<EOF
+    volumes:
+      - ${SCRIPT_PATH}/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
+      - ${TMP_CERT_FILE_WITH_CHAIN_AND_KEY}:/usr/local/etc/haproxy/cert_and_key.pem
+      - ${CA_CHAIN_FILE}:/usr/local/etc/haproxy/ca_bundle.crt
+      - ${CRL_FILE}:/usr/local/etc/haproxy/ca_bundle.crl
 EOF
   else
     abort "ERROR:" "Unsupported server type $SRV_TYPE"
   fi
   let CONTAINER_PORT+=1
 done
+
 
 
