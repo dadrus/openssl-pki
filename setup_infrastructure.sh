@@ -126,8 +126,8 @@ cat >> "${DOCKER_COMPOSE_FILE}" <<EOF
 
   test-service:
     build:
-      context: ${SCRIPT_PATH}/envoy
-      dockerfile: Dockerfile.service
+      context: ${SCRIPT_PATH}/backend
+      dockerfile: Dockerfile
     expose:
       - "9090"
 EOF
