@@ -136,6 +136,13 @@ for srv in "${SERVERS[@]}"; do
 
   source ${DOCKER_CONF_FILE}
 
+  
+  # there is no way to specify a separate file containing the certificate chain
+  # for the given ee certificate. Therefore we create a new file with all relevant entries
+  TMP_CERT_FILE_WITH_CHAIN="/tmp/srv-cert-with-chain-$(date +%Y-%m-%d-%H%M%S%N).pem"
+  cat ${SRV_CERTIFICATE_FILE} > ${TMP_CERT_FILE_WITH_CHAIN}
+  cat ${CA_CHAIN_FILE} >> ${TMP_CERT_FILE_WITH_CHAIN}
+
   cat >> "${DOCKER_COMPOSE_FILE}" <<EOF
 
   ${SERVER_DOMAIN}:
@@ -152,12 +159,6 @@ EOF
   done
   
   if [ "${SRV_TYPE}" == "nginx" ]; then
-    # there is no way to specify a separate file containing the certificate chain
-    # for the given ee certificate. Therefore we create a new file with all relevant entries
-    TMP_CERT_FILE_WITH_CHAIN="/tmp/srv-nginx-cert-$(date +%Y-%m-%d-%H%M%S).pem"
-    cat ${SRV_CERTIFICATE_FILE} > ${TMP_CERT_FILE_WITH_CHAIN}
-    cat ${CA_CHAIN_FILE} >> ${TMP_CERT_FILE_WITH_CHAIN}
-
     cat >> "${DOCKER_COMPOSE_FILE}" <<EOF
     volumes:
       - ${SCRIPT_PATH}/nginx/nginx.conf:/etc/nginx/nginx.conf
@@ -184,8 +185,8 @@ EOF
       cat >> "${DOCKER_COMPOSE_FILE}" <<EOF
     volumes:
       - ${SCRIPT_PATH}/envoy/envoy.yaml:/etc/envoy/envoy.yaml
-      - ${SRV_CERTIFICATE_FILE}:/etc/envoy/test_server.crt
-      - ${SRV_PRIVATE_KEY_FILE}:/etc/envoy/test_server.key
+      - ${TMP_CERT_FILE_WITH_CHAIN}:/etc/envoy/server.crt
+      - ${SRV_PRIVATE_KEY_FILE}:/etc/envoy/server.key
       - ${CA_CHAIN_FILE}:/etc/envoy/test_server-ca.crt
       - ${CA_CHAIN_FILE}:/etc/envoy/test_ca-bundle.crt
       - ${CRL_FILE}:/etc/envoy/test_ca-bundle.crl
