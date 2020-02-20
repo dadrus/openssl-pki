@@ -204,14 +204,20 @@ EOF
       - ${CRL_FILE}:/etc/envoy/ca_bundle.crl
 EOF
   elif [ "${SRV_TYPE}" == "haproxy" ]; then
+    # haproxy needs both certificate and the key in one file
     TMP_CERT_FILE_WITH_CHAIN_AND_KEY="/tmp/srv-cert-with-chain-and-key-$(date +%Y-%m-%d-%H%M%S%N).pem"
     cat ${TMP_CERT_FILE_WITH_CHAIN} > ${TMP_CERT_FILE_WITH_CHAIN_AND_KEY}
     cat ${SRV_PRIVATE_KEY_FILE} >> ${TMP_CERT_FILE_WITH_CHAIN_AND_KEY}
+
+    # to support OCSP stapling we need a file with exact the same name as the cert&key file with .ocsp ending
+    OCSP_RESPONSE_FILE=/tmp/haproxy_ocsp_resonse.ocsp
+    touch ${OCSP_RESPONSE_FILE}
 
     cat >> "${DOCKER_COMPOSE_FILE}" <<EOF
     volumes:
       - ${SCRIPT_PATH}/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
       - ${TMP_CERT_FILE_WITH_CHAIN_AND_KEY}:/usr/local/etc/haproxy/cert_and_key.pem
+      - ${OCSP_RESPONSE_FILE}:/usr/local/etc/haproxy/cert_and_key.pem.ocsp
       - ${CA_CHAIN_FILE}:/usr/local/etc/haproxy/ca_bundle.crt
       - ${CRL_FILE}:/usr/local/etc/haproxy/ca_bundle.crl
 EOF
