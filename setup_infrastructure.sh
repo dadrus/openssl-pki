@@ -36,7 +36,7 @@ while [ $# -gt 0 ]; do
       ;;
     -ca | --ca_dir)
       CA_DIR="${2:?ERROR: '--ca_dir' requires a non-empty option argument}"
-      CA_DIR=$(realpath ${CA_DIR})
+      CA_DIR=$(grealpath ${CA_DIR})
       CA_REFERENCES+=($CA_DIR)
       shift
       ;;
@@ -61,7 +61,7 @@ while [ $# -gt 0 ]; do
 done
 
 DOCKER_COMPOSE_FILE=${OUT_DIR}/docker-compose.yml
-SCRIPT_PATH=$(dirname $(realpath -s $0))
+SCRIPT_PATH=$(dirname $(grealpath -s $0))
 mkdir -p ${OUT_DIR}
 
 # create OCSP responder entries for each CA reference
@@ -204,14 +204,20 @@ EOF
       - ${CRL_FILE}:/etc/envoy/ca_bundle.crl
 EOF
   elif [ "${SRV_TYPE}" == "haproxy" ]; then
+    # haproxy needs both certificate and the key in one file
     TMP_CERT_FILE_WITH_CHAIN_AND_KEY="/tmp/srv-cert-with-chain-and-key-$(date +%Y-%m-%d-%H%M%S%N).pem"
     cat ${TMP_CERT_FILE_WITH_CHAIN} > ${TMP_CERT_FILE_WITH_CHAIN_AND_KEY}
     cat ${SRV_PRIVATE_KEY_FILE} >> ${TMP_CERT_FILE_WITH_CHAIN_AND_KEY}
+
+    # to support OCSP stapling we need a file with exact the same name as the cert&key file with .ocsp ending
+    OCSP_RESPONSE_FILE=/tmp/haproxy_ocsp_resonse.ocsp
+    touch ${OCSP_RESPONSE_FILE}
 
     cat >> "${DOCKER_COMPOSE_FILE}" <<EOF
     volumes:
       - ${SCRIPT_PATH}/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
       - ${TMP_CERT_FILE_WITH_CHAIN_AND_KEY}:/usr/local/etc/haproxy/cert_and_key.pem
+      - ${OCSP_RESPONSE_FILE}:/usr/local/etc/haproxy/cert_and_key.pem.ocsp
       - ${CA_CHAIN_FILE}:/usr/local/etc/haproxy/ca_bundle.crt
       - ${CRL_FILE}:/usr/local/etc/haproxy/ca_bundle.crl
 EOF
@@ -220,6 +226,3 @@ EOF
   fi
   let CONTAINER_PORT+=1
 done
-
-
-

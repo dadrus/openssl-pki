@@ -53,7 +53,7 @@ while [ $# -gt 0 ]; do
       ;;
     -ca | --ca_dir)
       CA_DIR="${2:?ERROR: '--ca_dir' requires a non-empty option argument}"
-      CA_DIR=$(realpath ${CA_DIR})
+      CA_DIR=$(grealpath ${CA_DIR})
       shift
       ;;
     -o | --out_dir)
@@ -77,8 +77,8 @@ done
 [ "${CERTIFICATE_TYPE}" ] || abort "ERROR:" "Usage of --type argument is mandatory"
 
 mkdir -p "${OUT_DIR}"
-OUT_DIR=$(realpath ${OUT_DIR})
-CONFIG_FILE_NAME="$(echo "${COMMON_NAME}" | sed -r 's/[ _()]+/-/g' | sed -r 's/[*]+/star/g')-$(date +%Y-%m-%d-%H%M%S)"
+OUT_DIR=$(grealpath ${OUT_DIR})
+CONFIG_FILE_NAME="$(echo "${COMMON_NAME}" | sed -E 's/[ _()]+/-/g' | sed -E 's/[*]+/star/g')-$(date +%Y-%m-%d-%H%M%S)"
 
 EXTENSION_REF=""
 CA_CONFIG=${CA_DIR}/ca.conf
@@ -159,5 +159,3 @@ SRV_PRIVATE_KEY_FILE=${PRIVATE_KEY_FILE}
 CA_CHAIN_FILE=${CA_CHAIN_FILE}
 CRL_FILE=${CA_DIR}/crl/crl.bundle
 EOF
-
-

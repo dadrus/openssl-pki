@@ -42,12 +42,12 @@ while [ $# -gt 0 ]; do
       ;;
     -o | --out_dir)
       WORKING_DIR="${2:?ERROR: '--out_dir' requires a non-empty option argument}"
-      WORKING_DIR=$(realpath ${WORKING_DIR})
+      WORKING_DIR=$(grealpath ${WORKING_DIR})
       shift
       ;;
     -p | --parent_dir)
       ISSUER_DIR="${2:?ERROR: '--parent_dir' requires a non-empty option argument}"
-      ISSUER_DIR=$(realpath ${ISSUER_DIR})
+      ISSUER_DIR=$(grealpath ${ISSUER_DIR})
       shift
       ;;
     -v | --verbose)
@@ -67,7 +67,7 @@ done
 
 SCRIPT_PATH=$(dirname $(realpath -s $0))
 
-BASE_NAME=$(tolower "$(echo "${COMMON_NAME}" | sed -r 's/[ _()]+/-/g')")
+BASE_NAME=$(tolower "$(echo "${COMMON_NAME}" | sed -E 's/[ _()]+/-/g')")
 TEMPLATES_DIR=${SCRIPT_PATH}/templates
 CONF_TEMPLATE=${TEMPLATES_DIR}/ca.conf.template
 WORKING_CONF=${WORKING_DIR}/ca.conf
@@ -181,7 +181,7 @@ fi
 # create a pkcs#12 file with certificates from the chain file
 # it would be great if we just could use openssl pkcs12, but it is unfortunatelly not compatible with Java KeyTool, which will be used
 # by java client and server
-cat $WORKING_DIR/certs/ca_chain.pem | awk 'split_after==1{n++;split_after=0} /-----END CERTIFICATE-----/ {split_after=1} {if(length($0) > 0) print > "tmp_cert" n ".pem"}'
+cat $WORKING_DIR/certs/ca_chain.pem | gawk 'split_after==1{n++;split_after=0} /-----END CERTIFICATE-----/ {split_after=1} {if(length($0) > 0) print > "tmp_cert" n ".pem"}'
 
 counter=0
 for file in $(ls tmp_cert*); do
@@ -265,5 +265,3 @@ ${WORKING_DIR}/generate_crl.sh
 # generate cert revokation skript
 generate ${TEMPLATES_DIR}/revoke_certificate.sh.template ${WORKING_DIR}/revoke_certificate.sh
 chmod +x ${WORKING_DIR}/revoke_certificate.sh
-
-
